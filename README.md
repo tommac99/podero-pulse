@@ -20,7 +20,7 @@ Built as a case assignment for the Podero GTM Engineer Intern role.
 
 ## Live demo
 
-> Deployed at: _(add your Vercel URL here after deployment)_
+> **https://podero-pulse.vercel.app**
 
 ---
 
