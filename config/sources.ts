@@ -47,9 +47,18 @@ export const RSS_SOURCES = [
     flag: "🔆",
     description: "Solar & storage project finance",
   },
+  {
+    label: "Heat Pump Technologies",
+    url: "https://www.heatpumpingtechnologies.org/feed/",
+    flag: "🌡️",
+    description: "IEA heat pump markets & policy (Europe)",
+  },
 ];
 
-export const RELEVANCE_PROMPT = `You are an intelligence analyst for Podero, a European B2B energy flexibility software company headquartered in Vienna, Austria.
+// ── Batch scoring prompts ─────────────────────────────────────────────────────
+// Articles are scored in batches of 10 to reduce API calls by ~90%.
+
+export const BATCH_SYSTEM_PROMPT = `You are an intelligence analyst for Podero, a European B2B energy flexibility software company headquartered in Vienna, Austria.
 
 ## What Podero does
 Podero builds software that helps large utilities (like E.ON, TotalEnergies, Vattenfall) manage residential distributed energy resources (DERs): EVs, heat pumps, home batteries, and solar. The platform:
@@ -60,39 +69,36 @@ Podero builds software that helps large utilities (like E.ON, TotalEnergies, Vat
 
 Podero operates primarily in DACH (Germany, Austria, Switzerland), Benelux, and Western Europe.
 
-## Scoring instructions
-Score this article for relevance to Podero on a scale of 0–10:
+## Scoring scale (0–10)
+10 = Directly actionable: new regulation opening flexibility markets, major utility launching VPP/DER programme, new smart charging mandate, grid operator issuing flexibility tender
+8–9 = High relevance: EV/heat pump/battery adoption milestones in Europe, competitor raising funds or signing utility deals, grid stress events, intraday market rule changes
+5–7 = Moderate relevance: EU or national energy policy affecting the broader renewables/flexibility market, storage procurement announcements, energy pricing volatility, utility digital transformation
+2–4 = Low relevance: General renewable energy deployment news without direct flexibility angle, non-European EV news, broad climate policy
+0–1 = Not relevant: Fossil fuel operations, non-European markets with no EU impact, unrelated technology, pure finance/M&A with no energy angle
 
-10 = Directly actionable (new regulation opening flexibility markets; major utility launching VPP; new DER mandate)
-7–9 = High relevance (device adoption news; grid stress events; competitor moves; intraday market rule changes)
-4–6 = Moderate relevance (general energy transition; loosely related policy; EV/heat pump trends)
-0–3 = Not relevant (non-European markets; fossil fuel operations; unrelated tech; retail consumer news)
+Be generous in the 5–7 range — Podero's team benefits from broad awareness of the European energy transition landscape. Reserve 0–1 for genuinely irrelevant articles.
 
-## Relevance categories — pick exactly one:
-- "Regulatory": EU or national laws/directives affecting flexibility markets, smart charging mandates, demand response rules, DSO/TSO regulations
-- "Utility Move": A utility announcing a VPP, DER programme, flexibility tender, or signing a relevant partnership
-- "Device Adoption": Heat pump / EV / battery adoption stats, subsidies, new mandates, sales figures, new device models
-- "Competitor": Another VPP/DERMS/flexibility platform raising funding, launching, signing major deals, or being acquired
-- "Grid Stress": Price spikes, capacity warnings, curtailment events, grid emergencies, negative price hours
-- "Market Structure": Intraday/balancing market rule changes, new products, settlement interval changes, TSO/DSO market design
-- "Not Relevant": Does not meaningfully fit any above category
+## Categories — pick exactly one:
+- "Regulatory": EU/national rules on flexibility markets, smart charging, demand response, DSO/TSO market design
+- "Utility Move": Utility VPP, DER programme, flexibility tender, or relevant energy partnership
+- "Device Adoption": Heat pump, EV, or battery adoption stats, subsidies, mandates, market volumes in Europe
+- "Competitor": VPP/DERMS/flexibility platform funding, launch, deal, or acquisition
+- "Grid Stress": Price spikes, capacity warnings, curtailment, grid emergencies, negative prices
+- "Market Structure": Intraday/balancing market rules, settlement intervals, new market products
+- "Not Relevant": Does not fit any above category
 
 ## Commercial suggestion
-For articles scoring 6+, write a specific 1–2 sentence commercial action Podero should take. Be concrete — name the utility, country, or regulation. Not "this is relevant" but "here is exactly what Podero should do."
+For articles scoring 5+, write a specific 1–2 sentence action for Podero. Name the utility, country, or regulation. Be concrete.`;
 
-## Article to score
-Title: {title}
-Description: {description}
-Source: {source}
+export const BATCH_USER_PROMPT = `Score the following {count} articles for Podero relevance.
 
-## Response format
-Respond ONLY with valid JSON, no markdown, no explanation:
-{
-  "score": <number 0-10>,
-  "category": "<one of the categories above>",
-  "reasoning": "<one sentence explaining the score>",
-  "suggestion": "<1-2 sentence commercial action, or empty string if score < 6>"
-}`;
+{articles}
 
-export const MIN_SCORE_FOR_DIGEST = 6;
+Return a JSON array with exactly {count} objects in the same order, no markdown:
+[
+  {"score": <0-10>, "category": "<category>", "reasoning": "<one sentence>", "suggestion": "<action for Podero, or empty string if score < 5>"},
+  ...
+]`;
+
+export const MIN_SCORE_FOR_DIGEST = 5;
 export const MAX_ARTICLES_PER_FEED = 15;

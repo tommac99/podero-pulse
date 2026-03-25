@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
 import { fetchFeed } from "@/lib/fetcher";
-import { scoreArticle, filterRelevant } from "@/lib/scorer";
+import { scoreAllArticles, filterRelevant } from "@/lib/scorer";
 import { generateDigest } from "@/lib/reporter";
 import { sendDigest } from "@/lib/mailer";
 import { RSS_SOURCES } from "@/config/sources";
-import type { Article, ScoredArticle } from "@/types";
+import type { Article } from "@/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -37,29 +37,33 @@ export async function POST(req: NextRequest) {
         try {
           controller.enqueue(encoder.encode(sseMessage(type, payload)));
         } catch {
-          // Stream may already be closed
+          // Stream already closed
         }
       };
 
       try {
-        // ── Phase 1: Fetch all RSS feeds ──────────────────────────────
+        // ── Phase 1: Fetch all RSS feeds in parallel ──────────────────
         const allArticles: Article[] = [];
 
+        // Signal all feeds as "fetching" immediately
         for (const source of RSS_SOURCES) {
           send("source_fetching", { label: source.label });
-          try {
-            const articles = await fetchFeed(source.label, source.url);
-            allArticles.push(...articles);
-            send("source_done", { label: source.label, count: articles.length });
-          } catch (err) {
-            send("source_done", {
-              label: source.label,
-              count: 0,
-              error: true,
-              message: String(err),
-            });
-          }
         }
+
+        // Fetch in parallel
+        const fetchResults = await Promise.allSettled(
+          RSS_SOURCES.map((source) => fetchFeed(source.label, source.url))
+        );
+
+        fetchResults.forEach((result, i) => {
+          const source = RSS_SOURCES[i];
+          if (result.status === "fulfilled") {
+            allArticles.push(...result.value);
+            send("source_done", { label: source.label, count: result.value.length });
+          } else {
+            send("source_done", { label: source.label, count: 0, error: true });
+          }
+        });
 
         // Deduplicate by URL
         const seen = new Set<string>();
@@ -71,25 +75,21 @@ export async function POST(req: NextRequest) {
 
         send("scoring_start", { total: deduped.length });
 
-        // ── Phase 2: Score articles with Claude ───────────────────────
-        const scoredArticles: ScoredArticle[] = [];
-
-        for (const article of deduped) {
-          try {
-            const scored = await scoreArticle(article, claudeApiKey);
-            scoredArticles.push(scored);
-            send("article_scored", scored);
-          } catch (err) {
-            // If Claude API key is wrong, surface error immediately
-            const message = String(err);
-            if (message.includes("401") || message.includes("authentication")) {
-              send("error", { message: "Invalid Anthropic API key. Please check and try again." });
-              controller.close();
-              return;
+        // ── Phase 2: Batch score with Claude ─────────────────────────
+        // 10 articles per Claude call instead of 1-per-article (~90% fewer API calls)
+        let scoredCount = 0;
+        const scoredArticles = await scoreAllArticles(
+          deduped,
+          claudeApiKey,
+          (batch) => {
+            scoredCount += batch.length;
+            // Emit each article in the batch individually for the live UI
+            for (const article of batch) {
+              send("article_scored", article);
             }
-            // Otherwise skip this article silently
+            send("batch_progress", { scored: scoredCount, total: deduped.length });
           }
-        }
+        );
 
         // ── Phase 3: Generate digest ──────────────────────────────────
         const relevant = filterRelevant(scoredArticles);
@@ -100,7 +100,6 @@ export async function POST(req: NextRequest) {
         });
         const digest = generateDigest(relevant, date);
 
-        // Send digest HTML as a separate chunk to avoid huge SSE messages
         send("digest_ready", { count: relevant.length, date });
 
         // ── Phase 4: Send email ───────────────────────────────────────
@@ -112,11 +111,15 @@ export async function POST(req: NextRequest) {
         }
 
         // ── Phase 5: Send full HTML for browser preview ───────────────
-        // Sent last so it doesn't slow down the live feed
         send("digest_html", { html: digest });
 
       } catch (err) {
-        send("error", { message: String(err) });
+        const message = String(err);
+        if (message.includes("401") || message.includes("authentication")) {
+          send("error", { message: "Invalid Anthropic API key. Please check and try again." });
+        } else {
+          send("error", { message });
+        }
       } finally {
         send("done", {});
         controller.close();

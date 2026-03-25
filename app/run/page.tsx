@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from "react-resizable-panels";
 import { SourceCard, type SourceStatus } from "@/components/SourceCard";
 import { ArticleCard } from "@/components/ArticleCard";
 import { DigestPreview } from "@/components/DigestPreview";
@@ -199,102 +200,105 @@ export default function RunPage() {
         />
       </div>
 
-      {/* ── Three-column layout ──────────────────────────────────── */}
-      <div className="flex-1 grid grid-cols-[190px_minmax(0,1fr)_500px] min-h-0">
+      {/* ── Three-column resizable layout ────────────────────────── */}
+      <PanelGroup orientation="horizontal" className="flex-1 min-h-0">
 
         {/* Left: Sources */}
-        <div className="border-r border-white/5 flex flex-col overflow-hidden">
-          <div className="px-4 pt-4 pb-2 shrink-0">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">
-              Sources
-            </p>
+        <Panel defaultSize={16} minSize={12} maxSize={28}>
+          <div className="h-full flex flex-col overflow-hidden">
+            <div className="px-4 pt-4 pb-2 shrink-0">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">Sources</p>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2">
+              {RSS_SOURCES.map((source, i) => (
+                <motion.div
+                  key={source.label}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: i * 0.06 }}
+                >
+                  <SourceCard
+                    label={source.label}
+                    status={sourceStatuses[source.label] ?? "idle"}
+                    count={sourceCounts[source.label]}
+                  />
+                </motion.div>
+              ))}
+              {phase !== "fetching" && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="pt-3 mt-1 border-t border-white/5"
+                >
+                  <p className="text-[11px] font-mono text-white/30">{articles.length} processed</p>
+                  <p className="text-[11px] font-mono text-podero-purple mt-0.5">{relevantCount} relevant</p>
+                </motion.div>
+              )}
+            </div>
           </div>
-          <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2">
-            {RSS_SOURCES.map((source, i) => (
-              <motion.div
-                key={source.label}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.08 }}
-              >
-                <SourceCard
-                  label={source.label}
-                  status={sourceStatuses[source.label] ?? "idle"}
-                  count={sourceCounts[source.label]}
-                />
-              </motion.div>
-            ))}
+        </Panel>
 
-            {/* Summary */}
-            {phase !== "fetching" && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="pt-3 mt-1 border-t border-white/5"
-              >
-                <p className="text-[11px] font-mono text-white/30">
-                  {articles.length} articles processed
-                </p>
-                <p className="text-[11px] font-mono text-podero-purple mt-0.5">
-                  {relevantCount} relevant signals
-                </p>
-              </motion.div>
-            )}
-          </div>
-        </div>
+        <PanelResizeHandle className="w-px bg-white/5 hover:bg-podero-purple/40 transition-colors duration-150 cursor-col-resize group relative">
+          <div className="absolute inset-y-0 -left-1 -right-1 group-hover:bg-podero-purple/10 transition-colors" />
+        </PanelResizeHandle>
 
         {/* Center: Article stream */}
-        <div className="border-r border-white/5 flex flex-col overflow-hidden">
-          <div className="px-5 pt-4 pb-2 shrink-0 flex items-center justify-between">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">
-              Scoring
-            </p>
-            {articles.length > 0 && (
-              <span className="text-[10px] font-mono text-white/25">
-                {articles.filter((a) => a.score >= 6).length} relevant / {articles.length} total
-              </span>
-            )}
-          </div>
-          <div ref={articleListRef} className="flex-1 overflow-y-auto px-5 pb-5 space-y-2.5">
-            <AnimatePresence initial={false}>
-              {articles.map((a, i) => (
-                <ArticleCard key={`${a.url}-${i}`} article={a} index={i} />
-              ))}
-            </AnimatePresence>
-            {articles.length === 0 && (
-              <div className="flex items-center gap-2 py-4">
-                <div className="flex gap-1">
-                  {[0, 1, 2].map((i) => (
-                    <motion.div
-                      key={i}
-                      className="w-1 h-1 rounded-full bg-white/20"
-                      animate={{ opacity: [0.2, 0.8, 0.2] }}
-                      transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                    />
-                  ))}
+        <Panel defaultSize={32} minSize={20}>
+          <div className="h-full flex flex-col overflow-hidden">
+            <div className="px-5 pt-4 pb-2 shrink-0 flex items-center justify-between">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">Scoring</p>
+              {articles.length > 0 && (
+                <span className="text-[10px] font-mono text-white/25">
+                  {articles.filter((a) => a.score >= 5).length} relevant / {articles.length} total
+                </span>
+              )}
+            </div>
+            <div ref={articleListRef} className="flex-1 overflow-y-auto px-5 pb-5 space-y-2.5">
+              <AnimatePresence initial={false}>
+                {articles.map((a, i) => (
+                  <ArticleCard key={`${a.url}-${i}`} article={a} index={i} />
+                ))}
+              </AnimatePresence>
+              {articles.length === 0 && (
+                <div className="flex items-center gap-2 py-4">
+                  <div className="flex gap-1">
+                    {[0, 1, 2].map((i) => (
+                      <motion.div
+                        key={i}
+                        className="w-1 h-1 rounded-full bg-white/20"
+                        animate={{ opacity: [0.2, 0.8, 0.2] }}
+                        transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-[11px] font-mono text-white/20">Fetching feeds…</p>
                 </div>
-                <p className="text-[11px] font-mono text-white/20">Fetching feeds…</p>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        </Panel>
+
+        <PanelResizeHandle className="w-px bg-white/5 hover:bg-podero-purple/40 transition-colors duration-150 cursor-col-resize group relative">
+          <div className="absolute inset-y-0 -left-1 -right-1 group-hover:bg-podero-purple/10 transition-colors" />
+        </PanelResizeHandle>
 
         {/* Right: Digest preview */}
-        <div className="flex flex-col overflow-hidden">
-          <div className="px-5 pt-4 pb-2 shrink-0">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">
-              Digest
-            </p>
+        <Panel defaultSize={52} minSize={30}>
+          <div className="h-full flex flex-col overflow-hidden">
+            <div className="px-5 pt-4 pb-2 shrink-0">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">Digest</p>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 pb-5">
+              <DigestPreview
+                html={digestHtml}
+                count={digestCount}
+                isLoading={phase === "scoring" || phase === "emailing"}
+              />
+            </div>
           </div>
-          <div className="flex-1 overflow-y-auto px-5 pb-5">
-            <DigestPreview
-              html={digestHtml}
-              count={digestCount}
-              isLoading={phase === "scoring" || phase === "emailing"}
-            />
-          </div>
-        </div>
-      </div>
+        </Panel>
+
+      </PanelGroup>
     </div>
   );
 }
