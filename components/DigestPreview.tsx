@@ -55,7 +55,7 @@ export function DigestPreview({ html, count, isLoading }: Props) {
         <iframe
           srcDoc={html}
           className="w-full bg-podero-warm"
-          style={{ height: "560px", border: "none" }}
+          style={{ height: "640px", border: "none" }}
           title="Podero Pulse Digest Preview"
           sandbox="allow-same-origin"
         />

@@ -1,15 +1,9 @@
 export const RSS_SOURCES = [
   {
-    label: "Recharge News",
-    url: "https://www.rechargenews.com/rss",
-    flag: "🌍",
-    description: "Leading renewables trade press",
-  },
-  {
-    label: "EURACTIV Energy",
-    url: "https://www.euractiv.com/sections/energy/feed/",
-    flag: "🇪🇺",
-    description: "EU energy policy & directives",
+    label: "Clean Energy Wire",
+    url: "https://www.cleanenergywire.org/rss.xml",
+    flag: "🇩🇪",
+    description: "DACH energy transition news (English)",
   },
   {
     label: "PV Magazine",
@@ -30,10 +24,28 @@ export const RSS_SOURCES = [
     description: "Energy transition analysis",
   },
   {
-    label: "Montel News",
-    url: "https://www.montelnews.com/rss",
-    flag: "📈",
-    description: "Energy trading & market prices",
+    label: "WindEurope",
+    url: "https://windeurope.org/feed/",
+    flag: "💨",
+    description: "European wind policy & markets",
+  },
+  {
+    label: "Energy Storage News",
+    url: "https://www.energy-storage.news/feed/",
+    flag: "🔋",
+    description: "BESS, grid flexibility, capacity markets",
+  },
+  {
+    label: "Carbon Brief",
+    url: "https://www.carbonbrief.org/feed/",
+    flag: "🌱",
+    description: "Climate & energy policy analysis",
+  },
+  {
+    label: "PV Tech",
+    url: "https://www.pv-tech.org/feed/",
+    flag: "🔆",
+    description: "Solar & storage project finance",
   },
 ];
 

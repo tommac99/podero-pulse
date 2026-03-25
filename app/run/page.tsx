@@ -200,7 +200,7 @@ export default function RunPage() {
       </div>
 
       {/* ── Three-column layout ──────────────────────────────────── */}
-      <div className="flex-1 grid grid-cols-[220px_1fr_380px] min-h-0">
+      <div className="flex-1 grid grid-cols-[190px_minmax(0,1fr)_500px] min-h-0">
 
         {/* Left: Sources */}
         <div className="border-r border-white/5 flex flex-col overflow-hidden">
