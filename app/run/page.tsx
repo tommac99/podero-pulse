@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from "react-resizable-panels";
+import { ResizablePanels } from "@/components/ResizablePanels";
 import { SourceCard, type SourceStatus } from "@/components/SourceCard";
 import { ArticleCard } from "@/components/ArticleCard";
 import { DigestPreview } from "@/components/DigestPreview";
@@ -201,10 +201,13 @@ export default function RunPage() {
       </div>
 
       {/* ── Three-column resizable layout ────────────────────────── */}
-      <PanelGroup orientation="horizontal" className="flex-1 min-h-0">
-
-        {/* Left: Sources */}
-        <Panel defaultSize={16} minSize={12} maxSize={28}>
+      <ResizablePanels
+        initialLeftPx={220}
+        initialRightPx={480}
+        minLeftPx={180}
+        minCenterPx={240}
+        minRightPx={320}
+        left={
           <div className="h-full flex flex-col overflow-hidden">
             <div className="px-4 pt-4 pb-2 shrink-0">
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">Sources</p>
@@ -236,14 +239,8 @@ export default function RunPage() {
               )}
             </div>
           </div>
-        </Panel>
-
-        <PanelResizeHandle className="w-px bg-white/5 hover:bg-podero-purple/40 transition-colors duration-150 cursor-col-resize group relative">
-          <div className="absolute inset-y-0 -left-1 -right-1 group-hover:bg-podero-purple/10 transition-colors" />
-        </PanelResizeHandle>
-
-        {/* Center: Article stream */}
-        <Panel defaultSize={32} minSize={20}>
+        }
+        center={
           <div className="h-full flex flex-col overflow-hidden">
             <div className="px-5 pt-4 pb-2 shrink-0 flex items-center justify-between">
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">Scoring</p>
@@ -276,14 +273,8 @@ export default function RunPage() {
               )}
             </div>
           </div>
-        </Panel>
-
-        <PanelResizeHandle className="w-px bg-white/5 hover:bg-podero-purple/40 transition-colors duration-150 cursor-col-resize group relative">
-          <div className="absolute inset-y-0 -left-1 -right-1 group-hover:bg-podero-purple/10 transition-colors" />
-        </PanelResizeHandle>
-
-        {/* Right: Digest preview */}
-        <Panel defaultSize={52} minSize={30}>
+        }
+        right={
           <div className="h-full flex flex-col overflow-hidden">
             <div className="px-5 pt-4 pb-2 shrink-0">
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">Digest</p>
@@ -296,9 +287,8 @@ export default function RunPage() {
               />
             </div>
           </div>
-        </Panel>
-
-      </PanelGroup>
+        }
+      />
     </div>
   );
 }
