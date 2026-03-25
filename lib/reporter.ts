@@ -38,7 +38,7 @@ export function generateDigest(articles: ScoredArticle[], date: string): string 
         <span style="font-size:11px;color:#aaa;font-family:monospace;">${a.source} · ${pubDate} · ${a.score.toFixed(1)}/10</span>
       </div>
       <h3 style="font-size:16px;font-weight:700;margin:0 0 8px;color:#262626;line-height:1.35;font-family:Arial,sans-serif;">
-        <a href="${a.url}" style="color:#262626;text-decoration:none;" target="_blank" rel="noopener">${a.title}</a>
+        <a href="${a.url}" style="color:#7D5BE6;text-decoration:underline;text-underline-offset:3px;" target="_blank" rel="noopener">${a.title} <span style="font-size:13px;font-weight:400;">↗</span></a>
       </h3>
       ${a.description ? `<p style="font-size:13px;color:#666;margin:0 0 14px;line-height:1.55;font-family:Arial,sans-serif;">${a.description.slice(0, 220)}${a.description.length > 220 ? "…" : ""}</p>` : ""}
       ${a.suggestion ? `
