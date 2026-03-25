@@ -65,8 +65,17 @@ export function generateDigest(articles: ScoredArticle[], date: string): string 
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Podero Pulse — ${date}</title>
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <style>
+    :root { color-scheme: light; }
+    body { background-color: #F0F0E9 !important; color: #262626 !important; }
+    @media (prefers-color-scheme: dark) {
+      body { background-color: #F0F0E9 !important; color: #262626 !important; }
+    }
+  </style>
 </head>
-<body style="margin:0;padding:0;background:#F0F0E9;font-family:Arial,sans-serif;">
+<body style="margin:0;padding:0;background:#F0F0E9 !important;font-family:Arial,sans-serif;color-scheme:light;">
   <div style="max-width:680px;margin:0 auto;padding:40px 24px 60px;">
 
     <!-- Header -->

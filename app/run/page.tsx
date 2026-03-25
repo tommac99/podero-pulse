@@ -203,7 +203,7 @@ export default function RunPage() {
       {/* ── Three-column resizable layout ────────────────────────── */}
       <ResizablePanels
         initialLeftPx={220}
-        initialRightPx={480}
+        initialRightPx={620}
         minLeftPx={180}
         minCenterPx={240}
         minRightPx={320}
