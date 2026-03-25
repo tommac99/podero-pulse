@@ -65,15 +65,24 @@ export default function RunPage() {
 
       const reader = response.body!.getReader();
       const decoder = new TextDecoder();
+      let buffer = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
+        // Accumulate chunks — a single SSE message (e.g. digest_html) can span
+        // multiple TCP packets, so we must buffer until we see the \n\n terminator.
+        buffer += decoder.decode(value, { stream: true });
 
-        for (const line of lines) {
+        // SSE messages are delimited by double newlines
+        const messages = buffer.split("\n\n");
+        // Keep the last (potentially incomplete) segment in the buffer
+        buffer = messages.pop() ?? "";
+
+        for (const message of messages) {
+          const line = message.split("\n").find((l) => l.startsWith("data: "));
+          if (!line) continue;
           try {
             const { type, payload } = JSON.parse(line.slice(6));
 
@@ -123,6 +132,7 @@ export default function RunPage() {
         }
       }
     };
+
 
     run();
   }, [router]);
