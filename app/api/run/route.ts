@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { fetchFeed } from "@/lib/fetcher";
-import { scoreAllArticles, filterRelevant } from "@/lib/scorer";
+import { scoreAllArticles, filterRelevant, generateSynthesis } from "@/lib/scorer";
 import { generateDigest } from "@/lib/reporter";
 import { sendDigest } from "@/lib/mailer";
 import { RSS_SOURCES } from "@/config/sources";
@@ -45,12 +45,10 @@ export async function POST(req: NextRequest) {
         // ── Phase 1: Fetch all RSS feeds in parallel ──────────────────
         const allArticles: Article[] = [];
 
-        // Signal all feeds as "fetching" immediately
         for (const source of RSS_SOURCES) {
           send("source_fetching", { label: source.label });
         }
 
-        // Fetch in parallel
         const fetchResults = await Promise.allSettled(
           RSS_SOURCES.map((source) => fetchFeed(source.label, source.url))
         );
@@ -76,14 +74,12 @@ export async function POST(req: NextRequest) {
         send("scoring_start", { total: deduped.length });
 
         // ── Phase 2: Batch score with Claude ─────────────────────────
-        // 10 articles per Claude call instead of 1-per-article (~90% fewer API calls)
         let scoredCount = 0;
         const scoredArticles = await scoreAllArticles(
           deduped,
           claudeApiKey,
           (batch) => {
             scoredCount += batch.length;
-            // Emit each article in the batch individually for the live UI
             for (const article of batch) {
               send("article_scored", article);
             }
@@ -91,18 +87,21 @@ export async function POST(req: NextRequest) {
           }
         );
 
-        // ── Phase 3: Generate digest ──────────────────────────────────
+        // ── Phase 3: Generate synthesis brief ────────────────────────
         const relevant = filterRelevant(scoredArticles);
+        const synthesis = await generateSynthesis(relevant, claudeApiKey);
+
+        // ── Phase 4: Generate digest ──────────────────────────────────
         const date = new Date().toLocaleDateString("en-GB", {
           day: "numeric",
           month: "long",
           year: "numeric",
         });
-        const digest = generateDigest(relevant, date);
+        const digest = generateDigest(relevant, date, synthesis);
 
         send("digest_ready", { count: relevant.length, date });
 
-        // ── Phase 4: Send email ───────────────────────────────────────
+        // ── Phase 5: Send email ───────────────────────────────────────
         try {
           await sendDigest(email, digest, date);
           send("email_sent", { to: email });
@@ -110,7 +109,7 @@ export async function POST(req: NextRequest) {
           send("error", { message: `Email delivery failed: ${String(err)}` });
         }
 
-        // ── Phase 5: Send full HTML for browser preview ───────────────
+        // ── Phase 6: Send full HTML for browser preview ───────────────
         send("digest_html", { html: digest });
 
       } catch (err) {

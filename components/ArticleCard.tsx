@@ -40,17 +40,26 @@ export function ArticleCard({ article, index }: { article: ScoredArticle; index:
 
       <p className="text-[11px] text-white/30 mt-1 font-mono truncate">{article.source}</p>
 
-      {isRelevant && article.suggestion && (
+      {isRelevant && (article.action || article.why_it_matters) && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           transition={{ delay: 0.2 }}
-          className="mt-3 pt-3 border-t border-white/8"
+          className="mt-3 pt-3 border-t border-white/8 space-y-1.5"
         >
-          <p className="text-[10px] font-bold text-podero-purple uppercase tracking-wider mb-1">
-            Podero opportunity
-          </p>
-          <p className="text-[11px] text-white/60 leading-relaxed">{article.suggestion}</p>
+          {article.urgency && article.urgency !== "Monitor" && (
+            <span className={`inline-block text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+              article.urgency === "Act now" ? "bg-podero-red/20 text-podero-red" : "bg-yellow-600/20 text-yellow-400"
+            }`}>
+              {article.urgency === "Act now" ? "⚡ Act now" : "🕐 This week"}
+            </span>
+          )}
+          {article.why_it_matters && (
+            <p className="text-[11px] text-white/50 leading-relaxed">{article.why_it_matters}</p>
+          )}
+          {article.action && (
+            <p className="text-[11px] text-podero-purple font-semibold leading-relaxed">{article.action}</p>
+          )}
         </motion.div>
       )}
     </motion.div>
